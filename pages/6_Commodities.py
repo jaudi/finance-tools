@@ -152,7 +152,7 @@ for row_start in range(0, len(items), 2):
         if series.empty:
             continue
         _, unit = COMMODITIES[name]
-        chg_total = (series.iloc[-1] / series.iloc[0] - 1) * 100
+        chg_total = float((series.iloc[-1] / series.iloc[0] - 1) * 100)
         line_color = CLRS[list(raw_data.keys()).index(name) % len(CLRS)]
         fill_color = line_color.replace("#", "rgba(").rstrip(")") + ",0.07)"
 

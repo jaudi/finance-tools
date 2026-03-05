@@ -163,7 +163,7 @@ for row_start in range(0, len(items), 2):
             line=dict(width=2.5, color=line_color),
             fill="tozeroy",
             fillcolor=f"rgba(0,63,136,0.06)",
-            hovertemplate=f"${{}}: %{{y:,.2f}} {unit}<extra></extra>".format(name),
+            hovertemplate=f"{name}: %{{y:,.2f}} {unit}<extra></extra>",
         ))
         fig.update_layout(
             title=f"{name} · {period_label} · {chg_total:+.1f}%",

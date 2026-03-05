@@ -208,7 +208,9 @@ if "Volume" in df.columns:
         ))
         fig4.update_layout(title="Trading Volume",
                            title_font=dict(size=15, color=PRIMARY),
-                           showlegend=False, **_layout, height=280)
+                           showlegend=False,
+                           **{k: v for k, v in _layout.items() if k != "height"},
+                           height=280)
         fig4.update_yaxes(tickformat=".2s")
         st.plotly_chart(fig4, use_container_width=True)
 

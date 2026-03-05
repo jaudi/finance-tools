@@ -62,7 +62,7 @@ with st.sidebar:
     if 2 <= len(selected) <= 5:
         st.markdown("---")
         st.subheader("Weights")
-        st.caption("Must sum to 1.0")
+        st.caption("Automatically normalised to 100%")
         default_w = round(1 / len(selected), 2)
         weights_raw = []
         for ticker in selected:
@@ -70,18 +70,19 @@ with st.sidebar:
                                 value=default_w, step=0.01, key=f"w_{ticker}")
             weights_raw.append(w)
         total_w = sum(weights_raw)
-        if abs(total_w - 1.0) > 0.001:
-            st.warning(f"Weights sum to {total_w:.2f} — must equal 1.0")
+        if total_w > 0:
+            st.caption(f"Sum: {total_w:.2f} → normalised to 1.0")
 
 if len(selected) < 2 or len(selected) > 5:
     st.warning("Please select between 2 and 5 indices in the sidebar.")
     st.stop()
 
-if abs(sum(weights_raw) - 1.0) > 0.001:
-    st.error("Adjust weights to sum to 1.0 before continuing.")
+total_w = sum(weights_raw)
+if total_w == 0:
+    st.error("All weights are zero. Set at least one weight above 0.")
     st.stop()
 
-weights = np.array(weights_raw)
+weights = np.array(weights_raw) / total_w  # auto-normalise
 
 # ── Data ───────────────────────────────────────────────────────────────────────
 try:

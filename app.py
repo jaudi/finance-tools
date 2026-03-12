@@ -1,7 +1,7 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="Finance Tools · EasyVisuals",
+    page_title="Finance Tools · FinancePlots",
     page_icon="📊",
     layout="wide",
 )
@@ -28,7 +28,7 @@ st.markdown("""
 
 st.title("📊 Finance Tools")
 st.markdown(
-    "A free finance toolkit built by **EasyVisuals**. "
+    "A free finance toolkit built by **FinancePlots**. "
     "No login required — open source, runs in your browser."
 )
 st.markdown("---")
@@ -100,7 +100,7 @@ with c7:
 
 st.markdown("---")
 st.markdown(
-    "<small>Built by <b>EasyVisuals</b> · Data from Yahoo Finance · "
+    "<small>Built by <b>FinancePlots</b> · Data from Yahoo Finance · "
     "For informational purposes only · Not financial advice</small>",
     unsafe_allow_html=True,
 )

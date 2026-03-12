@@ -98,6 +98,33 @@ with c7:
         moving averages and cumulative returns.</div>
     </div>""", unsafe_allow_html=True)
 
+st.markdown("<br>", unsafe_allow_html=True)
+
+# ── Planning & Valuation ──────────────────────────────────────────────────────
+st.markdown('<p class="section-label">Planning & Valuation</p>', unsafe_allow_html=True)
+c8, c9, c10 = st.columns(3)
+with c8:
+    st.markdown("""<div class="tool-card">
+        <div class="tool-icon">💧</div>
+        <div class="tool-title">13-Week Cash Flow Forecast</div>
+        <div class="tool-desc">Rolling weekly cash forecast with inflows, outflows
+        and closing balance. PDF export.</div>
+    </div>""", unsafe_allow_html=True)
+with c9:
+    st.markdown("""<div class="tool-card">
+        <div class="tool-icon">⚖️</div>
+        <div class="tool-title">Break-Even Analysis</div>
+        <div class="tool-desc">Fixed vs variable costs, contribution margin,
+        break-even units and margin of safety. PDF export.</div>
+    </div>""", unsafe_allow_html=True)
+with c10:
+    st.markdown("""<div class="tool-card">
+        <div class="tool-icon">🏢</div>
+        <div class="tool-title">Business Valuation</div>
+        <div class="tool-desc">DCF, EBITDA multiple and revenue multiple — blended
+        valuation range with industry benchmarks. PDF export.</div>
+    </div>""", unsafe_allow_html=True)
+
 st.markdown("---")
 st.markdown(
     "<small>Built by <b>FinancePlots</b> · Data from Yahoo Finance · "

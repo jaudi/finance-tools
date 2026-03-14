@@ -4,23 +4,10 @@ import plotly.graph_objects as go
 import io
 from datetime import datetime
 
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.units import cm
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Image,
-    Table, TableStyle, HRFlowable,
-)
-
 PRIMARY = "#003f88"
 ACCENT  = "#0066cc"
 GREEN   = "#1A936F"
 RED     = "#C0392B"
-PDF_HDR = colors.HexColor("#003f88")
-PDF_ACC = colors.HexColor("#0066cc")
-PDF_ALT = colors.HexColor("#EAF1FB")
 
 st.set_page_config(page_title="Break-Even Analysis · Finance Tools", page_icon="⚖️", layout="wide")
 
@@ -193,99 +180,53 @@ fig2.update_layout(
 st.plotly_chart(fig2, use_container_width=True)
 
 # ── PDF export ────────────────────────────────────────────────────────────────
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from pdf_utils import (
+    new_doc, build_header, section_heading, kpi_row,
+    data_table, chart_image, spacer, divider, NumberedCanvas,
+)
+
 st.subheader("Export")
 
 def build_pdf():
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4,
-                            leftMargin=2*cm, rightMargin=2*cm,
-                            topMargin=1.5*cm, bottomMargin=2*cm)
-    W = A4[0] - 4*cm
-
-    h_style  = ParagraphStyle("h",  fontName="Helvetica-Bold", fontSize=20,
-                               textColor=colors.white, alignment=TA_LEFT)
-    s_style  = ParagraphStyle("s",  fontName="Helvetica", fontSize=9,
-                               textColor=colors.HexColor("#ccddee"), alignment=TA_LEFT)
-    sec_style= ParagraphStyle("sc", fontName="Helvetica-Bold", fontSize=11,
-                               textColor=colors.HexColor(PRIMARY), spaceBefore=12, spaceAfter=4)
-    ft_style = ParagraphStyle("ft", fontName="Helvetica", fontSize=8,
-                               textColor=colors.HexColor("#999999"), alignment=TA_CENTER)
+    doc = new_doc(buf)
 
     story = []
-    hdr = Table([[Paragraph("FinancePlots", h_style),
-                  Paragraph(f"Break-Even Analysis<br/>{company}", h_style),
-                  Paragraph(f"Generated\n{datetime.now().strftime('%B %d, %Y')}", s_style)]],
-                colWidths=[W*0.22, W*0.50, W*0.28])
-    hdr.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,-1), PDF_HDR),
-        ("TOPPADDING",    (0,0), (-1,-1), 14), ("BOTTOMPADDING", (0,0), (-1,-1), 14),
-        ("LEFTPADDING",   (0,0), (-1,-1), 14), ("RIGHTPADDING",  (0,0), (-1,-1), 14),
-        ("VALIGN", (0,0), (-1,-1), "MIDDLE"), ("ALIGN", (2,0), (2,0), "RIGHT"),
+    story.append(build_header("Break-Even Analysis", company))
+    story.append(spacer(0.4))
+
+    story.append(kpi_row([
+        ("Break-Even Units",  f"{bep_units:,.0f}",         f"BEP revenue: ${bep_revenue:,.0f}"),
+        ("Contribution Margin", f"${contribution_margin:,.2f}", f"CM ratio: {cm_ratio*100:.1f}%"),
+        ("Current Profit",    f"${current_profit:,.0f}",   f"At {current_units:,} units"),
+        ("Margin of Safety",  f"{safety_pct:.1f}%",        f"{safety_units:,.0f} units above BEP"),
     ]))
-    story.append(hdr)
-    story.append(Spacer(1, 0.3*cm))
-    story.append(HRFlowable(width="100%", thickness=3, color=PDF_ACC, spaceAfter=8))
+    story.append(spacer(0.4))
 
-    kpi_data = [
-        ["Break-Even Units", "BEP Revenue", "CM per Unit", "Margin of Safety"],
-        [f"{bep_units:,.0f}", f"${bep_revenue:,.0f}", f"${contribution_margin:,.2f}", f"{safety_pct:.1f}%"],
-    ]
-    kpi_tbl = Table(kpi_data, colWidths=[W/4]*4)
-    kpi_tbl.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), PDF_ACC),
-        ("TEXTCOLOR",  (0,0), (-1,0), colors.white),
-        ("FONTNAME",   (0,0), (-1,0), "Helvetica-Bold"),
-        ("FONTSIZE",   (0,0), (-1,-1), 10),
-        ("ALIGN",      (0,0), (-1,-1), "CENTER"),
-        ("VALIGN",     (0,0), (-1,-1), "MIDDLE"),
-        ("TOPPADDING",    (0,0), (-1,-1), 7), ("BOTTOMPADDING", (0,0), (-1,-1), 7),
-        ("BACKGROUND", (0,1), (-1,1), PDF_ALT),
-        ("GRID", (0,0), (-1,-1), 0.5, colors.HexColor("#DDDDDD")),
-    ]))
-    story.append(kpi_tbl)
-    story.append(Spacer(1, 0.3*cm))
+    story.append(section_heading("Break-Even Chart"))
+    story.append(spacer(0.2))
+    story.append(chart_image(fig, height_ratio=0.48))
+    story.append(spacer(0.4))
 
-    img_bytes = fig.to_image(format="png", width=900, height=460, scale=2)
-    story.append(Paragraph("Break-Even Chart", sec_style))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#DDDDDD"), spaceAfter=4))
-    story.append(Image(io.BytesIO(img_bytes), width=W, height=W*0.50))
-    story.append(Spacer(1, 0.3*cm))
+    story.append(section_heading("Sensitivity Analysis"))
+    story.append(spacer(0.2))
+    story.append(data_table(
+        ["Units", "Revenue", "Total Cost", "Profit", "Margin"],
+        [[r["Units"], r["Revenue ($)"], r["Total Cost ($)"], r["Profit ($)"], r["Profit Margin"]]
+         for r in sens_rows],
+    ))
 
-    story.append(Paragraph("Sensitivity Analysis", sec_style))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#DDDDDD"), spaceAfter=4))
-    tbl_data = [["Units", "Revenue", "Total Cost", "Profit", "Margin"]]
-    for row in sens_rows:
-        tbl_data.append([row["Units"], row["Revenue ($)"], row["Total Cost ($)"],
-                         row["Profit ($)"], row["Profit Margin"]])
-    sens_tbl = Table(tbl_data, colWidths=[W/5]*5, repeatRows=1)
-    sens_tbl.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), PDF_HDR),
-        ("TEXTCOLOR",  (0,0), (-1,0), colors.white),
-        ("FONTNAME",   (0,0), (-1,0), "Helvetica-Bold"),
-        ("FONTSIZE",   (0,0), (-1,-1), 9),
-        ("ALIGN",      (0,0), (-1,-1), "CENTER"),
-        ("VALIGN",     (0,0), (-1,-1), "MIDDLE"),
-        ("TOPPADDING",    (0,0), (-1,-1), 5), ("BOTTOMPADDING", (0,0), (-1,-1), 5),
-        ("GRID", (0,0), (-1,-1), 0.4, colors.HexColor("#DDDDDD")),
-    ]))
-    for ri in range(1, len(tbl_data)):
-        if ri % 2 == 0:
-            sens_tbl._argW  # noqa
-            sens_tbl.setStyle(TableStyle([("BACKGROUND", (0,ri), (-1,ri), PDF_ALT)]))
-    story.append(sens_tbl)
-
-    story.append(Spacer(1, 0.6*cm))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#DDDDDD"), spaceAfter=4))
-    story.append(Paragraph("Generated by FinancePlots · Confidential · For planning purposes only", ft_style))
-    doc.build(story)
+    doc.build(story, canvasmaker=NumberedCanvas)
     buf.seek(0)
     return buf
 
-if st.button("Generate PDF", type="primary"):
+if st.button("📄 Export PDF Report", type="primary"):
     try:
         pdf = build_pdf()
-        st.download_button("📄 Download PDF Report", pdf,
+        st.download_button("⬇️ Download PDF", pdf,
                            file_name=f"breakeven_{company.replace(' ','_')}.pdf",
                            mime="application/pdf", use_container_width=True)
     except Exception as e:
-        st.error(f"Error generating PDF: {e}")
+        st.error(f"PDF generation error: {e}")

@@ -306,6 +306,22 @@ with col_r:
 # ── PDF export ─────────────────────────────────────────────────────────────────
 st.header("Export")
 
+# Excel export (always available)
+excel_buf = io.BytesIO()
+with pd.ExcelWriter(excel_buf, engine="openpyxl") as writer:
+    income_df.to_excel(writer, sheet_name="Income Statement", index=False)
+    cf_df.to_excel(writer, sheet_name="Cash Flow", index=False)
+    bs_df.to_excel(writer, sheet_name="Balance Sheet", index=False)
+    ratios_df.to_excel(writer, sheet_name="Ratios", index=False)
+excel_buf.seek(0)
+st.download_button(
+    "📊 Download Excel",
+    excel_buf,
+    file_name=f"financial_model_{company_name.replace(' ', '_')}.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    use_container_width=True,
+)
+
 if st.button("Generate PDF Report", type="primary", use_container_width=True):
     try:
         chart_bytes = [

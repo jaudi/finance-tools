@@ -8,7 +8,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable,
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image,
 )
 from datetime import datetime
 
@@ -306,3 +306,144 @@ with st.expander("Notes"):
     - If your mortgage rate > investment return: early repayment is the better financial decision
     - This tool is for illustrative purposes only and does not constitute financial advice
     """)
+
+# ── Export ─────────────────────────────────────────────────────────────────────
+st.header("Export")
+
+col_xl, col_pdf = st.columns(2)
+
+# Excel
+with col_xl:
+    xl_buf = io.BytesIO()
+    with pd.ExcelWriter(xl_buf, engine="openpyxl") as writer:
+        df.to_excel(writer, sheet_name="Loan Amortisation", index=False)
+        mdf.to_excel(writer, sheet_name="Mortgage Schedule", index=False)
+        summary = pd.DataFrame({
+            "Metric": ["Loan Amount", "Annual Rate (%)", "Duration (yrs)", "Monthly Payment",
+                       "Total Repayment", "Total Interest"],
+            "Value": [l_amount, l_rate, l_years,
+                      round(df["Payment"].iloc[0], 2),
+                      round(total_paid, 2), round(total_interest, 2)],
+        })
+        summary.to_excel(writer, sheet_name="Loan Summary", index=False)
+    xl_buf.seek(0)
+    st.download_button(
+        "📊 Download Excel",
+        xl_buf,
+        file_name="lending_calculator.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+    )
+
+# PDF
+with col_pdf:
+    if st.button("Generate PDF Report", type="primary", use_container_width=True):
+        try:
+            PDF_HDR = colors.HexColor("#003f88")
+            PDF_ACC = colors.HexColor("#0066cc")
+            PDF_ALT = colors.HexColor("#EAF1FB")
+
+            chart_bytes = fig1.to_image(format="png", width=900, height=380, scale=2)
+
+            buf = io.BytesIO()
+            doc = SimpleDocTemplate(buf, pagesize=A4,
+                                    leftMargin=2*cm, rightMargin=2*cm,
+                                    topMargin=1.5*cm, bottomMargin=2*cm)
+            W = A4[0] - 4*cm
+
+            h_style  = ParagraphStyle("h", fontName="Helvetica-Bold", fontSize=20,
+                                      textColor=colors.white, alignment=TA_LEFT)
+            s_style  = ParagraphStyle("s", fontName="Helvetica", fontSize=9,
+                                      textColor=colors.HexColor("#ccddee"), alignment=TA_LEFT)
+            sec_style = ParagraphStyle("sec", fontName="Helvetica-Bold", fontSize=11,
+                                       textColor=colors.HexColor("#003f88"), spaceBefore=12, spaceAfter=4)
+            ft_style  = ParagraphStyle("ft", fontName="Helvetica", fontSize=8,
+                                       textColor=colors.HexColor("#999"), alignment=TA_CENTER)
+
+            story = []
+
+            hdr = Table(
+                [[Paragraph("FinancePlots", h_style),
+                  Paragraph("Lending Calculator", h_style),
+                  Paragraph(f"Generated\n{datetime.now().strftime('%B %d, %Y')}", s_style)]],
+                colWidths=[W * 0.22, W * 0.50, W * 0.28],
+            )
+            hdr.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, -1), PDF_HDR),
+                ("TOPPADDING", (0, 0), (-1, -1), 16),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 16),
+                ("LEFTPADDING", (0, 0), (-1, -1), 14),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 14),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (2, 0), (2, 0), "RIGHT"),
+            ]))
+            story.append(hdr)
+            story.append(Spacer(1, 0.4*cm))
+            story.append(HRFlowable(width="100%", thickness=3, color=PDF_ACC, spaceAfter=8))
+
+            story.append(Paragraph("Loan Summary", sec_style))
+            kpi_data = [
+                ["Loan Amount", "Annual Rate", "Duration", "Monthly Payment", "Total Interest"],
+                [f"${l_amount:,.0f}", f"{l_rate}%", f"{l_years} yrs",
+                 f"${df['Payment'].iloc[0]:,.0f}", f"${total_interest:,.0f}"],
+            ]
+            kt = Table(kpi_data, colWidths=[W / 5] * 5)
+            kt.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), PDF_ACC),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 7),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+                ("BACKGROUND", (0, 1), (-1, 1), PDF_ALT),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#DDDDDD")),
+            ]))
+            story.append(kt)
+            story.append(Spacer(1, 0.3*cm))
+
+            story.append(Paragraph("Interest vs Principal", sec_style))
+            story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#DDDDDD"), spaceAfter=6))
+            story.append(Image(io.BytesIO(chart_bytes), width=W, height=W * 0.42))
+            story.append(Spacer(1, 0.3*cm))
+
+            story.append(Paragraph("Amortisation Schedule (first 24 months)", sec_style))
+            story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#DDDDDD"), spaceAfter=4))
+            preview = df.head(24).copy()
+            tdata = [list(preview.columns)] + preview.astype(str).values.tolist()
+            cw = W / len(preview.columns)
+            t = Table(tdata, colWidths=[cw] * len(preview.columns), repeatRows=1)
+            rstyles = [
+                ("BACKGROUND", (0, 0), (-1, 0), PDF_HDR),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 7),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#DDDDDD")),
+            ]
+            for ri in range(1, len(tdata)):
+                if ri % 2 == 0:
+                    rstyles.append(("BACKGROUND", (0, ri), (-1, ri), PDF_ALT))
+            t.setStyle(TableStyle(rstyles))
+            story.append(t)
+
+            story.append(Spacer(1, 0.4*cm))
+            story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#DDDDDD"), spaceAfter=4))
+            story.append(Paragraph("Generated by FinancePlots · Confidential", ft_style))
+
+            doc.build(story)
+            buf.seek(0)
+            st.download_button(
+                "📄 Download PDF Report",
+                buf,
+                file_name="lending_calculator.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
+        except Exception as e:
+            st.error(f"Error generating PDF: {e}")

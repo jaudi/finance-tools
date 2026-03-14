@@ -2,7 +2,17 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import io
 from scipy.stats import norm
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import cm
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image,
+)
+from datetime import datetime
 
 st.set_page_config(page_title="Portfolio Analysis · Finance Tools", page_icon="📦", layout="wide")
 
@@ -230,6 +240,157 @@ fig4.update_layout(title="Risk / Return by Asset",
 fig4.update_xaxes(title="Volatility (%)", ticksuffix="%")
 fig4.update_yaxes(title="Expected Return (%)", ticksuffix="%")
 st.plotly_chart(fig4, use_container_width=True)
+
+# ── Export ─────────────────────────────────────────────────────────────────────
+st.header("Export")
+
+col_xl, col_pdf = st.columns(2)
+
+with col_xl:
+    xl_buf = io.BytesIO()
+    returns_export = returns.copy()
+    returns_export.columns = [INDICES[t] for t in selected]
+    cum_export = ((1 + returns_export).cumprod() - 1) * 100
+    cum_export.columns = [f"{c} Cumulative (%)" for c in returns_export.columns]
+
+    metrics_df = pd.DataFrame({
+        "Metric": ["Expected Return", "Volatility (σ)", "Sharpe Ratio", "VaR (95% Annual)"],
+        "Value": [f"{ann_return:.2%}", f"{ann_vol:.2%}", f"{ann_sharpe:.2f}", f"{annual_var:.2%}"],
+    })
+    alloc_df = pd.DataFrame({
+        "Index": [INDICES[t] for t in selected],
+        "Weight": [f"{w:.2%}" for w in weights],
+    })
+
+    with pd.ExcelWriter(xl_buf, engine="openpyxl") as writer:
+        metrics_df.to_excel(writer, sheet_name="Portfolio Metrics", index=False)
+        alloc_df.to_excel(writer, sheet_name="Allocation", index=False)
+        returns_export.to_excel(writer, sheet_name="Daily Returns")
+        cum_export.to_excel(writer, sheet_name="Cumulative Returns")
+    xl_buf.seek(0)
+    st.download_button(
+        "📊 Download Excel",
+        xl_buf,
+        file_name="portfolio_analysis.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+    )
+
+with col_pdf:
+    if st.button("Generate PDF Report", type="primary", use_container_width=True):
+        try:
+            PDF_HDR = colors.HexColor("#003f88")
+            PDF_ACC = colors.HexColor("#0066cc")
+            PDF_ALT = colors.HexColor("#EAF1FB")
+
+            chart1_bytes = fig1.to_image(format="png", width=900, height=380, scale=2)
+            chart2_bytes = fig2.to_image(format="png", width=900, height=380, scale=2)
+            chart4_bytes = fig4.to_image(format="png", width=900, height=380, scale=2)
+
+            buf = io.BytesIO()
+            doc = SimpleDocTemplate(buf, pagesize=A4,
+                                    leftMargin=2*cm, rightMargin=2*cm,
+                                    topMargin=1.5*cm, bottomMargin=2*cm)
+            W = A4[0] - 4*cm
+
+            h_style   = ParagraphStyle("h",   fontName="Helvetica-Bold", fontSize=20,
+                                       textColor=colors.white, alignment=TA_LEFT)
+            s_style   = ParagraphStyle("s",   fontName="Helvetica", fontSize=9,
+                                       textColor=colors.HexColor("#ccddee"), alignment=TA_LEFT)
+            sec_style = ParagraphStyle("sec", fontName="Helvetica-Bold", fontSize=11,
+                                       textColor=colors.HexColor("#003f88"), spaceBefore=12, spaceAfter=4)
+            ft_style  = ParagraphStyle("ft",  fontName="Helvetica", fontSize=8,
+                                       textColor=colors.HexColor("#999"), alignment=TA_CENTER)
+            ct_style  = ParagraphStyle("ct",  fontName="Helvetica", fontSize=9,
+                                       textColor=colors.HexColor("#666"), spaceBefore=4, spaceAfter=2)
+
+            story = []
+
+            hdr = Table(
+                [[Paragraph("FinancePlots", h_style),
+                  Paragraph("Portfolio Analysis", h_style),
+                  Paragraph(f"Generated\n{datetime.now().strftime('%B %d, %Y')}", s_style)]],
+                colWidths=[W * 0.22, W * 0.50, W * 0.28],
+            )
+            hdr.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, -1), PDF_HDR),
+                ("TOPPADDING", (0, 0), (-1, -1), 16),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 16),
+                ("LEFTPADDING", (0, 0), (-1, -1), 14),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 14),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (2, 0), (2, 0), "RIGHT"),
+            ]))
+            story.append(hdr)
+            story.append(Spacer(1, 0.4*cm))
+            story.append(HRFlowable(width="100%", thickness=3, color=PDF_ACC, spaceAfter=8))
+
+            story.append(Paragraph("Portfolio Metrics", sec_style))
+            kpi_data = [
+                ["Expected Return", "Volatility (σ)", "Sharpe Ratio", "VaR (95% Annual)"],
+                [f"{ann_return:.2%}", f"{ann_vol:.2%}", f"{ann_sharpe:.2f}", f"{annual_var:.2%}"],
+            ]
+            kt = Table(kpi_data, colWidths=[W / 4] * 4)
+            kt.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), PDF_ACC),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 10),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                ("BACKGROUND", (0, 1), (-1, 1), PDF_ALT),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#DDDDDD")),
+            ]))
+            story.append(kt)
+            story.append(Spacer(1, 0.3*cm))
+
+            story.append(Paragraph("Allocation", sec_style))
+            story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#DDDDDD"), spaceAfter=4))
+            alloc_data = [["Index", "Weight"]] + [[INDICES[t], f"{w:.2%}"] for t, w in zip(selected, weights)]
+            at = Table(alloc_data, colWidths=[W * 0.7, W * 0.3])
+            at.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), PDF_HDR),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#DDDDDD")),
+            ]))
+            for ri in range(1, len(alloc_data)):
+                if ri % 2 == 0:
+                    at.setStyle(TableStyle([("BACKGROUND", (0, ri), (-1, ri), PDF_ALT)]))
+            story.append(at)
+            story.append(Spacer(1, 0.3*cm))
+
+            for chart_bytes, title in [
+                (chart1_bytes, "Cumulative Portfolio Return"),
+                (chart2_bytes, "Portfolio Allocation"),
+                (chart4_bytes, "Risk / Return by Asset"),
+            ]:
+                story.append(Paragraph(title, ct_style))
+                story.append(Image(io.BytesIO(chart_bytes), width=W, height=W * 0.42))
+                story.append(Spacer(1, 0.2*cm))
+
+            story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#DDDDDD"), spaceAfter=4))
+            story.append(Paragraph("Generated by FinancePlots · For informational purposes only", ft_style))
+
+            doc.build(story)
+            buf.seek(0)
+            st.download_button(
+                "📄 Download PDF Report",
+                buf,
+                file_name="portfolio_analysis.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
+        except Exception as e:
+            st.error(f"Error generating PDF: {e}")
 
 # ── Definitions ───────────────────────────────────────────────────────────────
 with st.expander("Definitions & Methodology"):

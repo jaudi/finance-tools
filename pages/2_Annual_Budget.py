@@ -4,15 +4,14 @@ import io
 import plotly.graph_objects as go
 from datetime import datetime
 
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.units import cm
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Image,
-    Table, TableStyle, HRFlowable,
+import sys as _sys_ab, os as _os_ab
+_sys_ab.path.insert(0, _os_ab.join(_os_ab.dirname(__file__), ".."))
+from pdf_utils import (
+    new_doc, build_header, section_heading, kpi_row,
+    data_table, chart_image, spacer, NumberedCanvas, CONTENT_W,
 )
+from reportlab.platypus import Table, TableStyle
+from reportlab.lib import colors
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -418,182 +417,70 @@ with col_r:
 # ── PDF Export ────────────────────────────────────────────────────────────────
 st.header("Export")
 
-if st.button("Generate PDF Report", type="primary", use_container_width=True):
+if st.button("📄 Export PDF Report", type="primary", use_container_width=True):
     try:
-        chart_bytes = [
-            fig1.to_image(format="png", width=900, height=400, scale=2),
-            fig2.to_image(format="png", width=900, height=400, scale=2),
-            fig3.to_image(format="png", width=900, height=400, scale=2),
-            fig4.to_image(format="png", width=900, height=400, scale=2),
-        ]
-
-        buf = io.BytesIO()
-        doc = SimpleDocTemplate(
-            buf, pagesize=A4,
-            leftMargin=2*cm, rightMargin=2*cm,
-            topMargin=1.5*cm, bottomMargin=2*cm,
-        )
-        W = A4[0] - 4*cm
-
-        h_style   = ParagraphStyle("h",   fontName="Helvetica-Bold", fontSize=20,
-                                   textColor=colors.white, alignment=TA_LEFT)
-        s_style   = ParagraphStyle("s",   fontName="Helvetica", fontSize=9,
-                                   textColor=colors.HexColor("#ccddee"), alignment=TA_LEFT)
-        sec_style = ParagraphStyle("sec", fontName="Helvetica-Bold", fontSize=11,
-                                   textColor=colors.HexColor("#003f88"),
-                                   spaceBefore=12, spaceAfter=4)
-        ft_style  = ParagraphStyle("ft",  fontName="Helvetica", fontSize=8,
-                                   textColor=colors.HexColor("#999"), alignment=TA_CENTER)
-
-        story = []
-
-        # Header banner
-        hdr = Table(
-            [[Paragraph("Finance Tools", h_style),
-              Paragraph(f"Annual Budget {int(budget_year)}<br/>{company_name}", h_style),
-              Paragraph(f"Generated\n{datetime.now().strftime('%B %d, %Y')}", s_style)]],
-            colWidths=[W * 0.25, W * 0.47, W * 0.28],
-        )
-        hdr.setStyle(TableStyle([
-            ("BACKGROUND",    (0, 0), (-1, -1), PDF_HDR),
-            ("TOPPADDING",    (0, 0), (-1, -1), 16),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 16),
-            ("LEFTPADDING",   (0, 0), (-1, -1), 14),
-            ("RIGHTPADDING",  (0, 0), (-1, -1), 14),
-            ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN",         (2, 0), (2, 0),   "RIGHT"),
-        ]))
-        story.append(hdr)
-        story.append(Spacer(1, 0.4*cm))
-        story.append(HRFlowable(width="100%", thickness=3, color=PDF_ACC, spaceAfter=8))
-
-        # KPI summary table
-        story.append(Paragraph("Key Metrics", sec_style))
-
         def _neg(val):
             return f"{currency}{val:,.0f}" if val >= 0 else f"({currency}{abs(val):,.0f})"
 
-        kpi_data = [
-            ["Total Revenue",   "Gross Profit",        "Total Overheads",   "EBITDA"],
-            [_neg(total_rev),   _neg(total_gp),        _neg(total_oh),      _neg(total_ebitda)],
-            ["",                f"Margin: {gp_pct:.1f}%", "",              f"Margin: {ebitda_pct:.1f}%"],
-        ]
-        kt = Table(kpi_data, colWidths=[W / 4] * 4)
-        kt.setStyle(TableStyle([
-            ("BACKGROUND",    (0, 0), (-1, 0), PDF_ACC),
-            ("TEXTCOLOR",     (0, 0), (-1, 0), colors.white),
-            ("FONTNAME",      (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTNAME",      (0, 1), (-1, -1), "Helvetica-Bold"),
-            ("FONTSIZE",      (0, 0), (-1, -1), 9),
-            ("FONTSIZE",      (0, 1), (-1, 1), 11),
-            ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
-            ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING",    (0, 0), (-1, -1), 7),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
-            ("BACKGROUND",    (0, 1), (-1, -1), PDF_ALT),
-            ("GRID",          (0, 0), (-1, -1), 0.5, colors.HexColor("#DDDDDD")),
+        buf = io.BytesIO()
+        doc = new_doc(buf)
+        story = []
+
+        story.append(build_header(f"Annual Budget {int(budget_year)}", company_name))
+        story.append(spacer(0.4))
+
+        story.append(kpi_row([
+            ("Total Revenue",    _neg(total_rev),    "Full year"),
+            ("Gross Profit",     _neg(total_gp),     f"Margin: {gp_pct:.1f}%"),
+            ("Total Overheads",  _neg(total_oh),     "Full year"),
+            ("EBITDA",           _neg(total_ebitda), f"Margin: {ebitda_pct:.1f}%"),
         ]))
-        story.append(kt)
-        story.append(Spacer(1, 0.4*cm))
+        story.append(spacer(0.4))
 
-        # Charts (2 per row)
-        story.append(Paragraph("Visualizations", sec_style))
-        story.append(HRFlowable(width="100%", thickness=1,
-                                color=colors.HexColor("#DDDDDD"), spaceAfter=6))
-        cw = (W - 0.4*cm) / 2
-        ch = cw * 0.44
-        for i in range(0, 4, 2):
-            row_imgs = Table(
-                [[Image(io.BytesIO(chart_bytes[i]),   width=cw, height=ch),
-                  Image(io.BytesIO(chart_bytes[i+1]), width=cw, height=ch)]],
-                colWidths=[cw, cw],
-            )
-            story.append(row_imgs)
-            story.append(Spacer(1, 0.2*cm))
+        for fig_obj, title in [
+            (fig1, "Revenue vs Direct Costs"),
+            (fig2, "Gross Profit & EBITDA"),
+            (fig3, "Monthly P&L"),
+            (fig4, "Cost Breakdown"),
+        ]:
+            story.append(section_heading(title))
+            story.append(spacer(0.2))
+            story.append(chart_image(fig_obj, height_ratio=0.44))
+            story.append(spacer(0.3))
 
-        # Annual P&L table (full year + % rev)
-        story.append(Paragraph("Annual P&L", sec_style))
-        story.append(HRFlowable(width="100%", thickness=1,
-                                color=colors.HexColor("#DDDDDD"), spaceAfter=4))
+        # Annual P&L table
+        story.append(section_heading("Annual P&L"))
+        story.append(spacer(0.2))
 
-        BOLD_LABELS = {
-            "▸ Total Revenue", "▸ Total Direct Costs",
-            "GROSS PROFIT", "▸ Total Overheads", "EBITDA",
-        }
-
-        pdf_pl = [["Line Item", "Full Year", "% Revenue"]]
-        pdf_bold = set()
-
-        def _pdf_row(label, val, pct=""):
-            return [label,
-                    _neg(val) if isinstance(val, (int, float)) else val,
-                    pct]
-
+        pdf_pl_rows = []
         for _, r in sales_df.iterrows():
             fy = float(r[MONTHS].sum())
-            pdf_pl.append([f"  {r['Category']}", _neg(fy), _pct_rev(fy)])
-        pdf_pl.append(["▸ Total Revenue", _neg(total_rev), "100.0%"])
-        pdf_bold.add(len(pdf_pl) - 1)
-        pdf_pl.append(["", "", ""])
-
+            pdf_pl_rows.append([f"  {r['Category']}", _neg(fy), _pct_rev(fy)])
+        pdf_pl_rows.append(["▸ Total Revenue", _neg(total_rev), "100.0%"])
+        pdf_pl_rows.append(["", "", ""])
         for _, r in dc_df.iterrows():
             fy = float(r[MONTHS].sum())
-            pdf_pl.append([f"  {r['Category']}", _neg(fy), _pct_rev(fy)])
-        pdf_pl.append(["▸ Total Direct Costs", _neg(total_dc), _pct_rev(total_dc)])
-        pdf_bold.add(len(pdf_pl) - 1)
-        pdf_pl.append(["", "", ""])
-
-        pdf_pl.append(["GROSS PROFIT", _neg(total_gp), f"{gp_pct:.1f}%"])
-        pdf_bold.add(len(pdf_pl) - 1)
-        pdf_pl.append(["", "", ""])
-
+            pdf_pl_rows.append([f"  {r['Category']}", _neg(fy), _pct_rev(fy)])
+        pdf_pl_rows.append(["▸ Total Direct Costs", _neg(total_dc), _pct_rev(total_dc)])
+        pdf_pl_rows.append(["GROSS PROFIT", _neg(total_gp), f"{gp_pct:.1f}%"])
+        pdf_pl_rows.append(["", "", ""])
         for _, r in oh_df.iterrows():
             fy = float(r[MONTHS].sum())
-            pdf_pl.append([f"  {r['Category']}", _neg(fy), _pct_rev(fy)])
-        pdf_pl.append(["▸ Total Overheads", _neg(total_oh), _pct_rev(total_oh)])
-        pdf_bold.add(len(pdf_pl) - 1)
-        pdf_pl.append(["", "", ""])
+            pdf_pl_rows.append([f"  {r['Category']}", _neg(fy), _pct_rev(fy)])
+        pdf_pl_rows.append(["▸ Total Overheads", _neg(total_oh), _pct_rev(total_oh)])
+        pdf_pl_rows.append(["EBITDA", _neg(total_ebitda), f"{ebitda_pct:.1f}%"])
 
-        pdf_pl.append(["EBITDA", _neg(total_ebitda), f"{ebitda_pct:.1f}%"])
-        pdf_bold.add(len(pdf_pl) - 1)
-
-        pl_t = Table(pdf_pl, colWidths=[W * 0.55, W * 0.25, W * 0.20], repeatRows=1)
-        ts = [
-            ("BACKGROUND",    (0, 0), (-1, 0), PDF_HDR),
-            ("TEXTCOLOR",     (0, 0), (-1, 0), colors.white),
-            ("FONTNAME",      (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE",      (0, 0), (-1, -1), 8),
-            ("TOPPADDING",    (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-            ("LEFTPADDING",   (0, 0), (-1, -1), 5),
-            ("RIGHTPADDING",  (0, 0), (-1, -1), 5),
-            ("ALIGN",         (1, 0), (-1, -1), "RIGHT"),
-            ("GRID",          (0, 0), (-1, -1), 0.3, colors.HexColor("#DDDDDD")),
-        ]
-        for ri in pdf_bold:
-            ts += [
-                ("FONTNAME",   (0, ri), (-1, ri), "Helvetica-Bold"),
-                ("BACKGROUND", (0, ri), (-1, ri), PDF_ALT),
-            ]
-        for ri in range(1, len(pdf_pl)):
-            if ri not in pdf_bold and ri % 2 == 0 and pdf_pl[ri][0]:
-                ts.append(("BACKGROUND", (0, ri), (-1, ri), colors.HexColor("#F8FAFD")))
-        pl_t.setStyle(TableStyle(ts))
-        story.append(pl_t)
-
-        story.append(Spacer(1, 0.5*cm))
-        story.append(HRFlowable(width="100%", thickness=1,
-                                color=colors.HexColor("#DDDDDD"), spaceAfter=4))
-        story.append(Paragraph(
-            "Generated by FinancePlots · Confidential · For planning purposes only",
-            ft_style,
+        story.append(data_table(
+            ["Line Item", "Full Year", "% Revenue"],
+            pdf_pl_rows,
+            col_widths=[CONTENT_W * 0.55, CONTENT_W * 0.25, CONTENT_W * 0.20],
         ))
 
-        doc.build(story)
+        doc.build(story, canvasmaker=NumberedCanvas)
         buf.seek(0)
 
         st.download_button(
-            "📄 Download PDF Report",
+            "⬇️ Download PDF",
             buf,
             file_name=f"budget_{company_name.replace(' ', '_')}_{int(budget_year)}.pdf",
             mime="application/pdf",
@@ -601,7 +488,7 @@ if st.button("Generate PDF Report", type="primary", use_container_width=True):
         )
 
     except Exception as e:
-        st.error(f"Error generating PDF: {e}")
+        st.error(f"PDF generation error: {e}")
 
 # ── Disclaimer ─────────────────────────────────────────────────────────────────
 with st.expander("Notes & assumptions"):

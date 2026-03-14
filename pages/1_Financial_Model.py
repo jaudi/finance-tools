@@ -5,14 +5,11 @@ import io
 import plotly.graph_objects as go
 from datetime import datetime
 
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.units import cm
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Image,
-    Table, TableStyle, HRFlowable,
+import sys as _sys_fm, os as _os_fm
+_sys_fm.path.insert(0, _os_fm.join(_os_fm.dirname(__file__), ".."))
+from pdf_utils import (
+    new_doc, build_header, section_heading, kpi_row,
+    data_table, chart_image, spacer, NumberedCanvas, CONTENT_W,
 )
 
 # ── Theme ──────────────────────────────────────────────────────────────────────
@@ -322,162 +319,59 @@ st.download_button(
     use_container_width=True,
 )
 
-if st.button("Generate PDF Report", type="primary", use_container_width=True):
+if st.button("📄 Export PDF Report", type="primary", use_container_width=True):
     try:
-        chart_bytes = [
-            fig1.to_image(format="png", width=900, height=400, scale=2),
-            fig2.to_image(format="png", width=900, height=400, scale=2),
-            fig3.to_image(format="png", width=900, height=400, scale=2),
-            fig4.to_image(format="png", width=900, height=400, scale=2),
-        ]
-
         buf = io.BytesIO()
-        doc = SimpleDocTemplate(
-            buf, pagesize=A4,
-            leftMargin=2*cm, rightMargin=2*cm,
-            topMargin=1.5*cm, bottomMargin=2*cm,
-        )
-        W = A4[0] - 4*cm
-
-        h_style  = ParagraphStyle("h",   fontName="Helvetica-Bold", fontSize=20,
-                                   textColor=colors.white, alignment=TA_LEFT)
-        s_style  = ParagraphStyle("s",   fontName="Helvetica", fontSize=9,
-                                   textColor=colors.HexColor("#ccddee"), alignment=TA_LEFT)
-        sec_style = ParagraphStyle("sec", fontName="Helvetica-Bold", fontSize=11,
-                                   textColor=colors.HexColor("#003f88"), spaceBefore=12, spaceAfter=4)
-        ft_style  = ParagraphStyle("ft",  fontName="Helvetica", fontSize=8,
-                                   textColor=colors.HexColor("#999"), alignment=TA_CENTER)
-        ct_style  = ParagraphStyle("ct",  fontName="Helvetica", fontSize=9,
-                                   textColor=colors.HexColor("#666"), spaceBefore=4, spaceAfter=2)
-
+        doc = new_doc(buf)
         story = []
 
-        # Header banner
-        hdr = Table(
-            [[Paragraph("FinancePlots", h_style),
-              Paragraph(f"5-Year Financial Model<br/>{company_name}", h_style),
-              Paragraph(f"Generated\n{datetime.now().strftime('%B %d, %Y')}", s_style)]],
-            colWidths=[W * 0.22, W * 0.50, W * 0.28],
-        )
-        hdr.setStyle(TableStyle([
-            ("BACKGROUND",    (0, 0), (-1, -1), PDF_HDR),
-            ("TOPPADDING",    (0, 0), (-1, -1), 16),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 16),
-            ("LEFTPADDING",   (0, 0), (-1, -1), 14),
-            ("RIGHTPADDING",  (0, 0), (-1, -1), 14),
-            ("VALIGN",  (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN",   (2, 0), (2, 0),  "RIGHT"),
-        ]))
-        story.append(hdr)
-        story.append(Spacer(1, 0.4*cm))
-        story.append(HRFlowable(width="100%", thickness=3, color=PDF_ACC, spaceAfter=8))
+        story.append(build_header("5-Year Financial Model", company_name))
+        story.append(spacer(0.4))
 
-        # KPI summary
-        story.append(Paragraph("Key Metrics — Year 5", sec_style))
-        kpi_data = [
-            ["Revenue (Y5)", "Net Income (Y5)", "Total Cash Flow", "Equity (Y5)"],
-            [f"${revenue[-1]:,.0f}", f"${net_income_v[-1]:,.0f}",
-             f"${sum(net_cf_v):,.0f}", f"${equity_v[-1]:,.0f}"],
-        ]
-        kt = Table(kpi_data, colWidths=[W / 4] * 4)
-        kt.setStyle(TableStyle([
-            ("BACKGROUND",    (0, 0), (-1, 0), PDF_ACC),
-            ("TEXTCOLOR",     (0, 0), (-1, 0), colors.white),
-            ("FONTNAME",      (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTNAME",      (0, 1), (-1, 1), "Helvetica-Bold"),
-            ("FONTSIZE",      (0, 0), (-1, -1), 10),
-            ("FONTSIZE",      (0, 1), (-1, 1), 12),
-            ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
-            ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING",    (0, 0), (-1, -1), 8),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-            ("BACKGROUND",    (0, 1), (-1, 1), PDF_ALT),
-            ("GRID",          (0, 0), (-1, -1), 0.5, colors.HexColor("#DDDDDD")),
+        story.append(kpi_row([
+            ("Revenue (Y5)",     f"${revenue[-1]:,.0f}",      "Year 5"),
+            ("Net Income (Y5)",  f"${net_income_v[-1]:,.0f}", "Year 5"),
+            ("Total Cash Flow",  f"${sum(net_cf_v):,.0f}",    "5-year total"),
+            ("Equity (Y5)",      f"${equity_v[-1]:,.0f}",     "Year 5"),
         ]))
-        story.append(kt)
-        story.append(Spacer(1, 0.3*cm))
+        story.append(spacer(0.4))
 
-        # Assumptions
-        story.append(Paragraph("Model Assumptions", sec_style))
-        story.append(HRFlowable(width="100%", thickness=1,
-                                color=colors.HexColor("#DDDDDD"), spaceAfter=6))
-        assump_data = [
+        story.append(section_heading("Model Assumptions"))
+        story.append(spacer(0.2))
+        story.append(data_table(
             ["Initial Revenue", "Growth Rate", "COGS %", "OpEx %", "Tax Rate", "CapEx", "D&A"],
-            [f"${initial_revenue:,}", f"{revenue_growth}%", f"{cogs_pct}%",
-             f"{opex_pct}%", f"{tax_rate}%", f"${capex:,}", f"${dep_amort:,}"],
-        ]
-        at = Table(assump_data, colWidths=[W / 7] * 7)
-        at.setStyle(TableStyle([
-            ("BACKGROUND",    (0, 0), (-1, 0), PDF_HDR),
-            ("TEXTCOLOR",     (0, 0), (-1, 0), colors.white),
-            ("FONTNAME",      (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTNAME",      (0, 1), (-1, 1), "Helvetica"),
-            ("FONTSIZE",      (0, 0), (-1, -1), 8),
-            ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
-            ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING",    (0, 0), (-1, -1), 5),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-            ("BACKGROUND",    (0, 1), (-1, 1), PDF_ALT),
-            ("GRID",          (0, 0), (-1, -1), 0.4, colors.HexColor("#DDDDDD")),
-        ]))
-        story.append(at)
-        story.append(Spacer(1, 0.3*cm))
+            [[f"${initial_revenue:,}", f"{revenue_growth}%", f"{cogs_pct}%",
+              f"{opex_pct}%", f"{tax_rate}%", f"${capex:,}", f"${dep_amort:,}"]],
+        ))
+        story.append(spacer(0.4))
 
-        # Charts
-        story.append(Paragraph("Visualizations", sec_style))
-        story.append(HRFlowable(width="100%", thickness=1,
-                                color=colors.HexColor("#DDDDDD"), spaceAfter=6))
-        chart_titles = [
-            "Revenue & Profitability", "Profit Margins",
-            "Cash Flow by Year", "Balance Sheet",
-        ]
-        for cb, ct in zip(chart_bytes, chart_titles):
-            story.append(Paragraph(ct, ct_style))
-            story.append(Image(io.BytesIO(cb), width=W, height=W * 0.44))
-            story.append(Spacer(1, 0.2*cm))
+        for fig_obj, title in [
+            (fig1, "Revenue & Profitability"),
+            (fig2, "Profit Margins"),
+            (fig3, "Cash Flow by Year"),
+            (fig4, "Balance Sheet"),
+        ]:
+            story.append(section_heading(title))
+            story.append(spacer(0.2))
+            story.append(chart_image(fig_obj, height_ratio=0.44))
+            story.append(spacer(0.3))
 
-        # Statement tables
-        def _df_table(df, title):
-            story.append(Paragraph(title, sec_style))
-            story.append(HRFlowable(width="100%", thickness=1,
-                                    color=colors.HexColor("#DDDDDD"), spaceAfter=4))
-            preview = df.copy()
-            tdata = [list(preview.columns)] + preview.astype(str).values.tolist()
-            cw = W / len(preview.columns)
-            t = Table(tdata, colWidths=[cw] * len(preview.columns), repeatRows=1)
-            rstyles = [
-                ("BACKGROUND",    (0, 0), (-1, 0), PDF_HDR),
-                ("TEXTCOLOR",     (0, 0), (-1, 0), colors.white),
-                ("FONTNAME",      (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE",      (0, 0), (-1, -1), 7),
-                ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
-                ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
-                ("TOPPADDING",    (0, 0), (-1, -1), 4),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-                ("GRID",          (0, 0), (-1, -1), 0.4, colors.HexColor("#DDDDDD")),
-            ]
-            for ri in range(1, len(tdata)):
-                if ri % 2 == 0:
-                    rstyles.append(("BACKGROUND", (0, ri), (-1, ri), PDF_ALT))
-            t.setStyle(TableStyle(rstyles))
-            story.append(t)
-            story.append(Spacer(1, 0.3*cm))
+        for df_obj, title in [
+            (income_df, "Income Statement"),
+            (cf_df,     "Cash Flow Statement"),
+            (bs_df,     "Balance Sheet"),
+            (ratios_df, "Financial Ratios"),
+        ]:
+            story.append(section_heading(title))
+            story.append(spacer(0.2))
+            story.append(data_table(list(df_obj.columns), df_obj.astype(str).values.tolist()))
+            story.append(spacer(0.3))
 
-        _df_table(income_df, "Income Statement")
-        _df_table(cf_df,     "Cash Flow Statement")
-        _df_table(bs_df,     "Balance Sheet")
-        _df_table(ratios_df, "Financial Ratios")
-
-        story.append(Spacer(1, 0.4*cm))
-        story.append(HRFlowable(width="100%", thickness=1,
-                                color=colors.HexColor("#DDDDDD"), spaceAfter=4))
-        story.append(Paragraph("Generated by FinancePlots · Confidential", ft_style))
-
-        doc.build(story)
+        doc.build(story, canvasmaker=NumberedCanvas)
         buf.seek(0)
 
         st.download_button(
-            "📄 Download PDF Report",
+            "⬇️ Download PDF",
             buf,
             file_name=f"financial_model_{company_name.replace(' ', '_')}.pdf",
             mime="application/pdf",

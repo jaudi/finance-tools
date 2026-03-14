@@ -243,6 +243,39 @@ if info:
             lo = info.get('fiftyTwoWeekLow')
             st.markdown(f"**52W High / Low**: {cur_sym}{hi:,.2f} / {cur_sym}{lo:,.2f}" if hi and lo else "**52W High / Low**: —")
 
+# ── Download ───────────────────────────────────────────────────────────────────
+st.header("Download Data")
+col_dl1, col_dl2 = st.columns(2)
+
+with col_dl1:
+    price_df = pd.DataFrame({"Date": price.index, "Close": price.values}).set_index("Date")
+    price_df["Daily Return"] = returns.reindex(price.index)
+    price_df["Cumulative Return"] = cum_ret.reindex(price.index)
+    for ma_label in show_ma:
+        if ma_label in df.columns:
+            price_df[ma_label] = df[ma_label].squeeze().reindex(price.index)
+    st.download_button(
+        "📥 Download Price History (CSV)",
+        data=price_df.to_csv().encode("utf-8"),
+        file_name=f"{ticker}_{period}_history.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+
+with col_dl2:
+    roll_vol_series = returns.rolling(30).std() * np.sqrt(252) * 100
+    vol_df = pd.DataFrame({
+        "Date": roll_vol_series.index,
+        "Rolling 30D Volatility (%)": roll_vol_series.values,
+    }).set_index("Date")
+    st.download_button(
+        "📥 Download Volatility (CSV)",
+        data=vol_df.to_csv().encode("utf-8"),
+        file_name=f"{ticker}_{period}_volatility.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+
 st.caption(
     "Data from Yahoo Finance · Enter any valid Yahoo Finance ticker "
     "(e.g. AAPL, SAN.MC, ^IBEX, BTC-USD) · Not financial advice"

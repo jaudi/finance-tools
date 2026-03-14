@@ -224,4 +224,35 @@ ratio_data = {
 }
 st.dataframe(pd.DataFrame(ratio_data).set_index(""), use_container_width=True)
 
+# ── Download ───────────────────────────────────────────────────────────────────
+st.header("Download Data")
+col_dl1, col_dl2 = st.columns(2)
+
+with col_dl1:
+    price_csv = prices[[ticker1, ticker2]].copy()
+    price_csv.index.name = "Date"
+    st.download_button(
+        "📥 Download Price History (CSV)",
+        data=price_csv.to_csv().encode("utf-8"),
+        file_name=f"{ticker1}_vs_{ticker2}_prices_{period}.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+
+with col_dl2:
+    returns_csv = pd.DataFrame({
+        f"{ticker1} Daily Return": ret1,
+        f"{ticker2} Daily Return": ret2,
+        f"{ticker1} Cumulative Return": cum1,
+        f"{ticker2} Cumulative Return": cum2,
+    })
+    returns_csv.index.name = "Date"
+    st.download_button(
+        "📥 Download Returns (CSV)",
+        data=returns_csv.to_csv().encode("utf-8"),
+        file_name=f"{ticker1}_vs_{ticker2}_returns_{period}.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+
 st.caption("Data from Yahoo Finance. Not financial advice.")

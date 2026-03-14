@@ -175,7 +175,7 @@ rows["Net Cash Flow"]  = net_flow
 rows["Closing Balance"] = closing
 
 df = pd.DataFrame(rows, index=week_labels).T
-df_display = df.applymap(lambda x: f"${x:,.0f}")
+df_display = df.map(lambda x: f"${x:,.0f}")
 st.dataframe(df_display, use_container_width=True)
 
 # ── PDF export ────────────────────────────────────────────────────────────────
@@ -280,7 +280,10 @@ def build_pdf():
     return buf
 
 if st.button("Generate PDF", type="primary"):
-    pdf = build_pdf()
-    st.download_button("📄 Download PDF Report", pdf,
-                       file_name=f"cashflow_{company.replace(' ','_')}.pdf",
-                       mime="application/pdf", use_container_width=True)
+    try:
+        pdf = build_pdf()
+        st.download_button("📄 Download PDF Report", pdf,
+                           file_name=f"cashflow_{company.replace(' ','_')}.pdf",
+                           mime="application/pdf", use_container_width=True)
+    except Exception as e:
+        st.error(f"Error generating PDF: {e}")

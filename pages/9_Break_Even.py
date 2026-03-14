@@ -282,7 +282,10 @@ def build_pdf():
     return buf
 
 if st.button("Generate PDF", type="primary"):
-    pdf = build_pdf()
-    st.download_button("📄 Download PDF Report", pdf,
-                       file_name=f"breakeven_{company.replace(' ','_')}.pdf",
-                       mime="application/pdf", use_container_width=True)
+    try:
+        pdf = build_pdf()
+        st.download_button("📄 Download PDF Report", pdf,
+                           file_name=f"breakeven_{company.replace(' ','_')}.pdf",
+                           mime="application/pdf", use_container_width=True)
+    except Exception as e:
+        st.error(f"Error generating PDF: {e}")

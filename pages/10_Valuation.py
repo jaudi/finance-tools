@@ -83,6 +83,13 @@ for yr in range(1, 6):
     fcf_list.append(fcf)
     pv_list.append(pv)
 
+if wacc <= terminal_growth:
+    st.error(
+        f"⚠️ WACC ({wacc}%) must be greater than the terminal growth rate ({terminal_growth}%) "
+        "for the DCF formula to work. Please adjust the sliders."
+    )
+    st.stop()
+
 terminal_value    = fcf_list[-1] * (1 + terminal_growth / 100) / ((wacc - terminal_growth) / 100)
 pv_terminal       = terminal_value / ((1 + wacc / 100) ** 5)
 enterprise_dcf    = sum(pv_list) + pv_terminal
@@ -310,7 +317,10 @@ def build_pdf():
     return buf
 
 if st.button("Generate PDF", type="primary"):
-    pdf = build_pdf()
-    st.download_button("📄 Download PDF Report", pdf,
-                       file_name=f"valuation_{company.replace(' ','_')}.pdf",
-                       mime="application/pdf", use_container_width=True)
+    try:
+        pdf = build_pdf()
+        st.download_button("📄 Download PDF Report", pdf,
+                           file_name=f"valuation_{company.replace(' ','_')}.pdf",
+                           mime="application/pdf", use_container_width=True)
+    except Exception as e:
+        st.error(f"Error generating PDF: {e}")

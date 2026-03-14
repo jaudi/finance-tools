@@ -111,7 +111,7 @@ kpi_data = [
      f"{ann_ret:+.1%}", "Based on selected period",
      "kpi-green" if ann_ret >= 0 else "kpi-red"),
     (k5, "Forward P/E",
-     f"{info['forwardPE']:.1f}x" if info.get("forwardPE") else "—",
+     f"{info.get('forwardPE'):.1f}x" if info.get("forwardPE") else "—",
      info.get("sector", "—"), ""),
 ]
 for col, label, val, sub, cls in kpi_data:

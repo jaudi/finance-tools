@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 
 import sys as _sys_ab, os as _os_ab
-_sys_ab.path.insert(0, _os_ab.path.join(_os_ab.dirname(__file__), ".."))
+_sys_ab.path.insert(0, _os_ab.path.join(_os_ab.path.dirname(__file__), ".."))
 from pdf_utils import (
     new_doc, build_header, section_heading, kpi_row,
     data_table, chart_image, spacer, NumberedCanvas, CONTENT_W,

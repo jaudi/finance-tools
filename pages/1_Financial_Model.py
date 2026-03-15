@@ -8,7 +8,7 @@ from datetime import datetime
 from reportlab.lib import colors
 
 import sys as _sys_fm, os as _os_fm
-_sys_fm.path.insert(0, _os_fm.path.join(_os_fm.dirname(__file__), ".."))
+_sys_fm.path.insert(0, _os_fm.path.join(_os_fm.path.dirname(__file__), ".."))
 from pdf_utils import (
     new_doc, build_header, section_heading, kpi_row,
     data_table, chart_image, spacer, NumberedCanvas, CONTENT_W,

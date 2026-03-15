@@ -5,6 +5,8 @@ import io
 import plotly.graph_objects as go
 from datetime import datetime
 
+from reportlab.lib import colors
+
 import sys as _sys_fm, os as _os_fm
 _sys_fm.path.insert(0, _os_fm.join(_os_fm.dirname(__file__), ".."))
 from pdf_utils import (

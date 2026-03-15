@@ -82,8 +82,11 @@ if prices.empty or len(prices.columns) < 2:
     st.error("Could not load data for one or both tickers. Check the symbols and try again.")
     st.stop()
 
-p1 = prices[ticker1] if ticker1 in prices.columns else prices.iloc[:, 0]
-p2 = prices[ticker2] if ticker2 in prices.columns else prices.iloc[:, 1]
+if ticker1 not in prices.columns or ticker2 not in prices.columns:
+    st.error(f"Could not find data for one or both tickers: {ticker1}, {ticker2}. Check the symbols and try again.")
+    st.stop()
+p1 = prices[ticker1]
+p2 = prices[ticker2]
 
 # ── Calculations ───────────────────────────────────────────────────────────────
 ret1     = p1.pct_change().dropna()

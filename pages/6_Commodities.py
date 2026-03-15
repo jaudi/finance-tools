@@ -69,8 +69,8 @@ def fetch_commodity_data(tickers, period):
             df = yf.download(ticker, period=period, progress=False, auto_adjust=True)
             if not df.empty:
                 data[name] = df["Close"]
-        except Exception:
-            pass
+        except Exception as e:
+            st.warning(f"Could not load data for {name}: {e}")
     return data
 
 ticker_map = {k: v for k, v in COMMODITIES.items() if k in selected}

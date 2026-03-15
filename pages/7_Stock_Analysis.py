@@ -55,7 +55,11 @@ import yfinance as yf
 
 @st.cache_data(ttl=3600)
 def fetch_stock(ticker, period):
-    return yf.download(ticker, period=period, progress=False, auto_adjust=True)
+    try:
+        return yf.download(ticker, period=period, progress=False, auto_adjust=True)
+    except Exception as e:
+        st.error(f"Failed to fetch data for {ticker}: {e}")
+        return pd.DataFrame()
 
 @st.cache_data(ttl=3600)
 def fetch_info(ticker):

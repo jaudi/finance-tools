@@ -85,10 +85,10 @@ with c5:
     </div>""", unsafe_allow_html=True)
 with c6:
     st.markdown("""<div class="tool-card">
-        <div class="tool-icon">🛢️</div>
-        <div class="tool-title">Commodities</div>
-        <div class="tool-desc">Live prices for gold, silver, crude oil, natural
-        gas, copper and wheat. CSV download.</div>
+        <div class="tool-icon">💹</div>
+        <div class="tool-title">Compound Interest</div>
+        <div class="tool-desc">See how initial capital and monthly contributions
+        grow over time. Preloaded with historical market return benchmarks.</div>
     </div>""", unsafe_allow_html=True)
 with c7:
     st.markdown("""<div class="tool-card">

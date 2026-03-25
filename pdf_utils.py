@@ -130,20 +130,32 @@ class NumberedCanvas(pdf_canvas.Canvas):
 
 
 # ── Header builder ───────────────────────────────────────────────────────────
-def build_header(report_title: str, subtitle: str, st=styles()) -> Table:
-    """Full-width branded header block."""
+def build_header(report_title: str, subtitle: str, logo_bytes=None, st=styles()) -> Table:
+    """Full-width branded header block. Pass logo_bytes (PNG/JPG) to show a company logo."""
     date_str = datetime.now().strftime("%B %d, %Y")
 
-    brand = Table(
-        [[
-            Paragraph("<b>Finance</b>Plots", ParagraphStyle(
-                "brand", fontName="Helvetica-Bold", fontSize=13,
-                textColor=colors.HexColor("#93C5FD"), alignment=TA_LEFT,
-            )),
-        ]],
-        colWidths=[CONTENT_W * 0.25],
-    )
-    brand.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE")]))
+    if logo_bytes:
+        reader = ImageReader(BytesIO(logo_bytes))
+        img_w, img_h = reader.getSize()
+        aspect = img_w / img_h
+        max_w = CONTENT_W * 0.18
+        max_h = 1.2 * cm
+        if aspect > max_w / max_h:
+            w, h = max_w, max_w / aspect
+        else:
+            h, w = max_h, max_h * aspect
+        left_cell = Image(BytesIO(logo_bytes), width=w, height=h)
+    else:
+        left_cell = Table(
+            [[
+                Paragraph("<b>Finance</b>Plots", ParagraphStyle(
+                    "brand", fontName="Helvetica-Bold", fontSize=13,
+                    textColor=colors.HexColor("#93C5FD"), alignment=TA_LEFT,
+                )),
+            ]],
+            colWidths=[CONTENT_W * 0.22],
+        )
+        left_cell.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE")]))
 
     title_cell = [
         Paragraph(report_title, st["title"]),
@@ -152,7 +164,7 @@ def build_header(report_title: str, subtitle: str, st=styles()) -> Table:
     date_cell = Paragraph(f"Generated<br/>{date_str}", st["date"])
 
     hdr = Table(
-        [[brand, title_cell, date_cell]],
+        [[left_cell, title_cell, date_cell]],
         colWidths=[CONTENT_W * 0.22, CONTENT_W * 0.52, CONTENT_W * 0.26],
     )
     hdr.setStyle(TableStyle([

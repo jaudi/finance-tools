@@ -417,6 +417,9 @@ with col_r:
 # ── PDF Export ────────────────────────────────────────────────────────────────
 st.header("Export")
 
+logo_file = st.file_uploader("Upload company logo (optional)", type=["png", "jpg", "jpeg"], key="logo")
+logo_bytes = logo_file.read() if logo_file else None
+
 if st.button("📄 Export PDF Report", type="primary", use_container_width=True):
     try:
         def _neg(val):
@@ -426,7 +429,7 @@ if st.button("📄 Export PDF Report", type="primary", use_container_width=True)
         doc = new_doc(buf)
         story = []
 
-        story.append(build_header(f"Annual Budget {int(budget_year)}", company_name))
+        story.append(build_header(f"Annual Budget {int(budget_year)}", company_name, logo_bytes=logo_bytes))
         story.append(spacer(0.4))
 
         story.append(kpi_row([
@@ -486,6 +489,7 @@ if st.button("📄 Export PDF Report", type="primary", use_container_width=True)
             mime="application/pdf",
             use_container_width=True,
         )
+        st.caption("📧 To share by email: download above and attach the PDF.")
 
     except Exception as e:
         st.error(f"PDF generation error: {e}")

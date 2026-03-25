@@ -333,6 +333,9 @@ with col_pdf:
         data_table, chart_image, spacer, NumberedCanvas,
     )
 
+    logo_file = st.file_uploader("Upload company logo (optional)", type=["png", "jpg", "jpeg"], key="logo")
+    logo_bytes = logo_file.read() if logo_file else None
+
     if st.button("📄 Export PDF Report", type="primary", use_container_width=True):
         try:
             buf = io.BytesIO()
@@ -340,7 +343,8 @@ with col_pdf:
             story = []
 
             story.append(build_header("Mortgage & Loan Calculator",
-                                      f"Loan: ${l_amount:,.0f} · {l_rate}% · {l_years} yrs"))
+                                      f"Loan: ${l_amount:,.0f} · {l_rate}% · {l_years} yrs",
+                                      logo_bytes=logo_bytes))
             story.append(spacer(0.4))
 
             story.append(kpi_row([
@@ -373,5 +377,6 @@ with col_pdf:
                 mime="application/pdf",
                 use_container_width=True,
             )
+            st.caption("📧 To share by email: download above and attach the PDF.")
         except Exception as e:
             st.error(f"PDF generation error: {e}")

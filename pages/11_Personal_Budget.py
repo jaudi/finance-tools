@@ -251,12 +251,16 @@ from pdf_utils import (
     data_table, chart_image, spacer, divider, NumberedCanvas,
 )
 
+st.subheader("Export")
+logo_file = st.file_uploader("Upload company logo (optional)", type=["png", "jpg", "jpeg"], key="logo")
+logo_bytes = logo_file.read() if logo_file else None
+
 def build_pdf():
     buf = io.BytesIO()
     doc = new_doc(buf)
 
     story = []
-    story.append(build_header("Personal Budget Planner", budget_name))
+    story.append(build_header("Personal Budget Planner", budget_name, logo_bytes=logo_bytes))
     story.append(spacer(0.4))
 
     story.append(kpi_row([
@@ -297,6 +301,7 @@ if st.button("📄 Export PDF Report", type="primary"):
         st.download_button("⬇️ Download PDF", pdf,
                            file_name=f"personal_budget_{budget_name.replace(' ', '_')}.pdf",
                            mime="application/pdf", use_container_width=True)
+        st.caption("📧 To share by email: download above and attach the PDF.")
     except Exception as e:
         st.error(f"PDF generation error: {e}")
 

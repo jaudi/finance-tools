@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import io
+import sys, os
+from datetime import datetime
 
 st.set_page_config(page_title="Personal Budget · Finance Tools", page_icon="💰", layout="wide")
 
@@ -35,6 +37,7 @@ st.markdown(
 # ── Settings ──────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.header("Settings")
+    budget_name    = st.text_input("Your name / label", value="My Budget")
     currency_label = st.selectbox("Currency", ["$ USD", "€ EUR", "£ GBP", "CHF", "Other"])
     cur_sym = {"$ USD": "$", "€ EUR": "€", "£ GBP": "£", "CHF": "CHF ", "Other": ""}.get(currency_label, "")
     period  = st.radio("Budget period", ["Monthly", "Annual"], horizontal=True)
@@ -240,5 +243,61 @@ if rows:
         mime="text/csv",
         use_container_width=False,
     )
+
+# ── PDF export ────────────────────────────────────────────────────────────────
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from pdf_utils import (
+    new_doc, build_header, section_heading, kpi_row,
+    data_table, chart_image, spacer, divider, NumberedCanvas,
+)
+
+def build_pdf():
+    buf = io.BytesIO()
+    doc = new_doc(buf)
+
+    story = []
+    story.append(build_header("Personal Budget Planner", budget_name))
+    story.append(spacer(0.4))
+
+    story.append(kpi_row([
+        (f"{period} Income",   f"{cur_sym}{disp_income:,.0f}",   "All sources"),
+        (f"{period} Expenses", f"{cur_sym}{disp_expenses:,.0f}", "All categories"),
+        (f"{period} Savings",  f"{cur_sym}{disp_saving:,.0f}",   "Net after expenses"),
+        ("Savings Rate",       f"{saving_rate:.1f}%",            "Target: 20%+"),
+    ]))
+    story.append(spacer(0.4))
+
+    if group_totals:
+        story.append(section_heading("Spending Breakdown"))
+        story.append(spacer(0.2))
+        story.append(chart_image(fig_donut, height_ratio=0.45))
+        story.append(spacer(0.4))
+
+    story.append(section_heading(f"{period} Overview"))
+    story.append(spacer(0.2))
+    story.append(chart_image(fig_bar, height_ratio=0.45))
+    story.append(spacer(0.4))
+
+    if rows:
+        story.append(section_heading("Detailed Breakdown"))
+        story.append(spacer(0.2))
+        story.append(data_table(
+            ["Category", "Item", f"Monthly ({cur_sym})", f"Annual ({cur_sym})", "% of Expenses"],
+            [[r["Category"], r["Item"], r[f"Monthly ({cur_sym})"], r[f"Annual ({cur_sym})"], r["% of Expenses"]]
+             for r in rows],
+        ))
+
+    doc.build(story, canvasmaker=NumberedCanvas)
+    buf.seek(0)
+    return buf
+
+if st.button("📄 Export PDF Report", type="primary"):
+    try:
+        pdf = build_pdf()
+        st.download_button("⬇️ Download PDF", pdf,
+                           file_name=f"personal_budget_{budget_name.replace(' ', '_')}.pdf",
+                           mime="application/pdf", use_container_width=True)
+    except Exception as e:
+        st.error(f"PDF generation error: {e}")
 
 st.caption("FinancePlots · Personal budget planner · Not financial advice")

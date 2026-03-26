@@ -24,6 +24,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+from mobile_css import inject_mobile_css
+inject_mobile_css()
+
 st.title("📉 Stock Comparison")
 st.markdown(
     '<p class="ev-caption">Compare two stocks side by side — '

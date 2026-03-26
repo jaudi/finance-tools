@@ -27,6 +27,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+from mobile_css import inject_mobile_css
+inject_mobile_css()
+
 st.title("🏢 Business Valuation Calculator")
 st.markdown(
     '<p class="ev-caption">DCF · EBITDA Multiple · Revenue Multiple · Comparable analysis · PDF export</p>',

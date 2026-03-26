@@ -48,6 +48,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+from mobile_css import inject_mobile_css
+inject_mobile_css()
+
 st.title("📈 5-Year Financial Model")
 st.markdown(
     '<p class="ev-caption">Income statement · Cash flow · Balance sheet · '

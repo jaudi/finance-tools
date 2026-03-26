@@ -27,6 +27,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+from mobile_css import inject_mobile_css
+inject_mobile_css()
+
 st.title("💧 13-Week Cash Flow Forecast")
 st.markdown(
     '<p class="ev-caption">Rolling weekly cash forecast · Inflows · Outflows · Closing balance · PDF export</p>',
@@ -51,14 +54,19 @@ INFLOW_CATS = ["Customer Receipts", "Loan Proceeds", "Asset Sales", "Other Incom
 inflow_data = {}
 for cat in INFLOW_CATS:
     with st.expander(f"📥 {cat}", expanded=(cat == "Customer Receipts")):
-        cols = st.columns(13)
-        vals = []
-        for w in range(13):
-            with cols[w]:
-                v = st.number_input(f"W{w+1}", min_value=0.0, value=0.0,
-                                    step=100.0, key=f"in_{cat}_{w}", label_visibility="visible")
-                vals.append(v)
-        inflow_data[cat] = vals
+        _week_labels = [f"W{w+1} ({(start_date + timedelta(weeks=w)).strftime('%d %b')})" for w in range(13)]
+        _df = pd.DataFrame({"Week": _week_labels, "Amount ($)": [0.0] * 13})
+        _edited = st.data_editor(
+            _df,
+            key=f"in_{cat}",
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                "Week": st.column_config.TextColumn("Week", disabled=True, width="medium"),
+                "Amount ($)": st.column_config.NumberColumn("Amount ($)", min_value=0.0, step=100.0, format="$%.0f"),
+            },
+        )
+        inflow_data[cat] = _edited["Amount ($)"].tolist()
 
 # ── Outflow categories ────────────────────────────────────────────────────────
 st.header("Weekly Outflows")
@@ -69,14 +77,19 @@ OUTFLOW_CATS = ["Payroll", "Suppliers / COGS", "Rent & Utilities", "Loan Repayme
 outflow_data = {}
 for cat in OUTFLOW_CATS:
     with st.expander(f"📤 {cat}", expanded=(cat == "Payroll")):
-        cols = st.columns(13)
-        vals = []
-        for w in range(13):
-            with cols[w]:
-                v = st.number_input(f"W{w+1}", min_value=0.0, value=0.0,
-                                    step=100.0, key=f"out_{cat}_{w}", label_visibility="visible")
-                vals.append(v)
-        outflow_data[cat] = vals
+        _week_labels = [f"W{w+1} ({(start_date + timedelta(weeks=w)).strftime('%d %b')})" for w in range(13)]
+        _df = pd.DataFrame({"Week": _week_labels, "Amount ($)": [0.0] * 13})
+        _edited = st.data_editor(
+            _df,
+            key=f"out_{cat}",
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                "Week": st.column_config.TextColumn("Week", disabled=True, width="medium"),
+                "Amount ($)": st.column_config.NumberColumn("Amount ($)", min_value=0.0, step=100.0, format="$%.0f"),
+            },
+        )
+        outflow_data[cat] = _edited["Amount ($)"].tolist()
 
 # ── Build forecast table ───────────────────────────────────────────────────────
 weeks = [f"W{i+1}\n{(start_date + timedelta(weeks=i)).strftime('%d %b')}" for i in range(13)]

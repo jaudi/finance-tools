@@ -28,6 +28,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+from mobile_css import inject_mobile_css
+inject_mobile_css()
+
 st.title("💰 Personal Budget Planner")
 st.markdown(
     '<p class="ev-caption">Monthly income & expenses · Savings rate · Spending breakdown · CSV export</p>',

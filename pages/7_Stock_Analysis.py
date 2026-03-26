@@ -24,6 +24,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+from mobile_css import inject_mobile_css
+inject_mobile_css()
+
 st.title("📊 Stock Analysis")
 st.markdown(
     '<p class="ev-caption">Enter any ticker · Price history · '

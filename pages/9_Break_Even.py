@@ -27,6 +27,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+from mobile_css import inject_mobile_css
+inject_mobile_css()
+
 st.title("⚖️ Break-Even Analysis")
 st.markdown(
     '<p class="ev-caption">Fixed costs · Variable costs · Selling price · Break-even point · Margin of safety</p>',

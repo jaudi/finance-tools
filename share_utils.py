@@ -1,48 +1,61 @@
-import base64
-import streamlit.components.v1 as components
+import urllib.parse
+import streamlit as st
+
+_SITE_URL = "https://www.financeplots.com"
+
+_TOOL_NAMES = {
+    "breakeven":  "Break-Even Analysis",
+    "financial":  "5-Year Financial Model",
+    "budget":     "Annual Budget",
+    "lending":    "Lending Calculator",
+    "portfolio":  "Portfolio Analysis",
+    "compound":   "Compound Interest Calculator",
+    "cashflow":   "13-Week Cash Flow Forecast",
+    "valuation":  "Business Valuation Calculator",
+    "personal":   "Personal Budget Planner",
+}
+
+
+def _tool_name(filename: str) -> str:
+    key = filename.replace(".pdf", "").split("_")[0].lower()
+    return _TOOL_NAMES.get(key, "Finance Tool")
 
 
 def share_pdf_button(pdf_buf, filename="report.pdf"):
     """
-    Renders a Share PDF button using the Web Share API.
-    On mobile: opens the native share sheet (WhatsApp, Telegram, email…).
-    On unsupported browsers: shows a fallback note.
+    Renders WhatsApp and X share buttons linking to FinancePlots.
+    pdf_buf and filename are kept for API compatibility but not used for sharing
+    (direct file sharing from web is blocked in sandboxed iframes).
     """
-    if hasattr(pdf_buf, "seek"):
-        pdf_buf.seek(0)
-    raw = pdf_buf.read() if hasattr(pdf_buf, "read") else pdf_buf
-    b64 = base64.b64encode(raw).decode()
-    safe_name = filename.replace('"', "").replace("'", "")
+    tool = _tool_name(filename)
+    wa_text = f"I just used this free finance tool — {tool} 📊 {_SITE_URL}"
+    x_text  = f"Just used {tool} on FinancePlots — free finance tools 📊"
 
-    html = f"""
-<style>
-.fp-share-btn {{
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    width: 100%; background: #25D366; color: #fff; border: none;
-    border-radius: 6px; padding: 0.45rem 0;
-    font-size: 0.88rem; font-weight: 600; cursor: pointer;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    margin-top: 4px;
-}}
-.fp-share-btn:active {{ background: #1da851; }}
-.fp-note {{
-    font-size: 0.75rem; color: #888; margin-top: 4px; display: none;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-}}
-</style>
-<button class="fp-share-btn" onclick="sharePDF()">📤 Share (WhatsApp / email…)</button>
-<div class="fp-note" id="fp-note">Sharing not supported — use Download above.</div>
-<script>
-async function sharePDF() {{
-    const bytes = Uint8Array.from(atob("{b64}"), c => c.charCodeAt(0));
-    const file = new File([bytes], "{safe_name}", {{type: "application/pdf"}});
-    if (navigator.canShare && navigator.canShare({{files: [file]}})) {{
-        try {{ await navigator.share({{files: [file], title: "{safe_name}"}}) }}
-        catch(e) {{ if (e.name !== "AbortError") document.getElementById("fp-note").style.display="block" }}
-    }} else {{
-        document.getElementById("fp-note").style.display = "block";
-    }}
-}}
-</script>
-"""
-    components.html(html, height=60)
+    wa_url = f"https://wa.me/?text={urllib.parse.quote(wa_text)}"
+    x_url  = (
+        f"https://x.com/intent/tweet"
+        f"?text={urllib.parse.quote(x_text)}"
+        f"&url={urllib.parse.quote(_SITE_URL)}"
+    )
+
+    st.markdown(
+        f"""
+        <div style="display:flex;gap:8px;margin-top:6px;">
+            <a href="{wa_url}" target="_blank"
+               style="flex:1;display:flex;align-items:center;justify-content:center;
+                      gap:5px;background:#25D366;color:#fff;text-decoration:none;
+                      border-radius:6px;padding:0.45rem 0;font-size:0.85rem;
+                      font-weight:600;font-family:sans-serif;">
+                📤 WhatsApp
+            </a>
+            <a href="{x_url}" target="_blank"
+               style="flex:1;display:flex;align-items:center;justify-content:center;
+                      gap:5px;background:#000;color:#fff;text-decoration:none;
+                      border-radius:6px;padding:0.45rem 0;font-size:0.85rem;
+                      font-weight:600;font-family:sans-serif;">
+                𝕏 Share on X
+            </a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )

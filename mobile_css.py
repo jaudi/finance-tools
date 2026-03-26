@@ -71,6 +71,28 @@ _MOBILE_CSS = """
     }
 }
 
+/* ── Compact home page on mobile ────────────────────────────────────────────── */
+@media screen and (max-width: 768px) {
+    /* Hide card descriptions — show only icon + title + link */
+    .tool-desc {
+        display: none !important;
+    }
+    /* Reduce card padding */
+    .tool-card {
+        padding: 0.75rem 1rem !important;
+    }
+    /* Reduce section label spacing */
+    .section-label {
+        margin-bottom: 0.25rem !important;
+    }
+    /* Shrink <br> spacers between sections */
+    br {
+        display: block;
+        content: "";
+        margin-top: -0.5rem !important;
+    }
+}
+
 /* ── Hide built-in sidebar navigation (use home page as directory) ─────────── */
 [data-testid="stSidebarNav"] {
     display: none !important;

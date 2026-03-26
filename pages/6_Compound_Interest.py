@@ -29,6 +29,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+from share_utils import share_pdf_button
 from mobile_css import inject_mobile_css
 inject_mobile_css()
 st.page_link("app.py", label="← All Tools")
@@ -243,6 +244,6 @@ if st.button("📄 Export PDF Report", type="primary"):
         st.download_button("⬇️ Download PDF", pdf,
                            file_name="compound_interest.pdf",
                            mime="application/pdf", use_container_width=True)
-        st.caption("📧 To share by email: download above and attach the PDF.")
+        share_pdf_button(pdf, "compound_interest.pdf")
     except Exception as e:
         st.error(f"PDF generation error: {e}")

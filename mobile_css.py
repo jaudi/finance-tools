@@ -43,6 +43,33 @@ _MOBILE_CSS = """
         overflow-x: auto !important;
     }
 }
+
+/* ── Compact sidebar navigation on mobile ───────────────────────────────────── */
+@media screen and (max-width: 768px) {
+    /* Reduce padding on each nav link */
+    [data-testid="stSidebarNavLink"] {
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.25rem !important;
+        font-size: 0.82rem !important;
+        line-height: 1.3 !important;
+    }
+    /* Tighten nav section spacing */
+    [data-testid="stSidebarNav"] {
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.25rem !important;
+    }
+    /* Narrower sidebar so it doesn't cover the full screen */
+    [data-testid="stSidebar"] > div:first-child {
+        width: 220px !important;
+        min-width: 220px !important;
+    }
+    /* Reduce sidebar header padding */
+    [data-testid="stSidebar"] .block-container {
+        padding-top: 1rem !important;
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+}
 </style>
 """
 

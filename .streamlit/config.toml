@@ -7,3 +7,10 @@ enableXsrfProtection = false
 gatherUsageStats = false
 serverAddress = "tools.financeplots.com"
 serverPort = 443
+
+[theme]
+base = "light"
+primaryColor = "#0066cc"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f7f9fc"
+textColor = "#1a1a1a"

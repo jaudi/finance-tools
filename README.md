@@ -15,7 +15,7 @@ No login required. Run it locally or deploy it in one click.
 ### Lending
 | Tool | Description |
 |---|---|
-| 🏦 Lending Calculator | Loan amortisation (French method) and mortgage with early repayment strategy |
+| 🏦 Lending Calculator | Loan amortisation (French method) and mortgage with early repayment strategy |what a
 
 ### Markets & Investing
 | Tool | Description |

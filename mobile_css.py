@@ -70,6 +70,25 @@ _MOBILE_CSS = """
         padding-right: 0.75rem !important;
     }
 }
+
+/* ── Hide built-in sidebar navigation (use home page as directory) ─────────── */
+[data-testid="stSidebarNav"] {
+    display: none !important;
+}
+
+/* ── Home page: style Open link inside tool cards ──────────────────────────── */
+[data-testid="stPageLink"] a {
+    display: block;
+    margin-top: 0.6rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #0066cc !important;
+    text-decoration: none !important;
+}
+[data-testid="stPageLink"] a:hover {
+    color: #003f88 !important;
+    text-decoration: underline !important;
+}
 </style>
 """
 

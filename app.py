@@ -46,6 +46,7 @@ with c1:
         <div class="tool-desc">Project revenue, costs and profits over 5 years.
         Income statement, cash flow, balance sheet and PDF export.</div>
     </div>""", unsafe_allow_html=True)
+    st.page_link("pages/1_Financial_Model.py", label="Open →", use_container_width=False)
 with c2:
     st.markdown("""<div class="tool-card">
         <div class="tool-icon">💰</div>
@@ -53,6 +54,7 @@ with c2:
         <div class="tool-desc">Monthly P&L with sales forecast, direct costs and
         overheads by category. Download/upload Excel template. PDF export.</div>
     </div>""", unsafe_allow_html=True)
+    st.page_link("pages/2_Annual_Budget.py", label="Open →", use_container_width=False)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -66,6 +68,7 @@ with c3:
         <div class="tool-desc">Loan amortisation schedule and mortgage analysis
         with early repayment strategy — compare loan rate vs savings rate.</div>
     </div>""", unsafe_allow_html=True)
+    st.page_link("pages/3_Lending.py", label="Open →", use_container_width=False)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -79,6 +82,7 @@ with c4:
         <div class="tool-desc">Global index portfolio — expected return,
         Sharpe ratio, VaR and allocation chart.</div>
     </div>""", unsafe_allow_html=True)
+    st.page_link("pages/4_Portfolio_Analysis.py", label="Open →", use_container_width=False)
 with c5:
     st.markdown("""<div class="tool-card">
         <div class="tool-icon">📉</div>
@@ -86,6 +90,7 @@ with c5:
         <div class="tool-desc">Compare two stocks — price history, cumulative
         returns, correlation and key ratios.</div>
     </div>""", unsafe_allow_html=True)
+    st.page_link("pages/5_Stock_Comparison.py", label="Open →", use_container_width=False)
 with c6:
     st.markdown("""<div class="tool-card">
         <div class="tool-icon">💹</div>
@@ -93,6 +98,7 @@ with c6:
         <div class="tool-desc">See how initial capital and monthly contributions
         grow over time. Preloaded with historical market return benchmarks.</div>
     </div>""", unsafe_allow_html=True)
+    st.page_link("pages/6_Compound_Interest.py", label="Open →", use_container_width=False)
 with c7:
     st.markdown("""<div class="tool-card">
         <div class="tool-icon">🇪🇸</div>
@@ -113,6 +119,7 @@ with c8:
         <div class="tool-desc">Rolling weekly cash forecast with inflows, outflows
         and closing balance. PDF export.</div>
     </div>""", unsafe_allow_html=True)
+    st.page_link("pages/8_Cash_Flow_Forecast.py", label="Open →", use_container_width=False)
 with c9:
     st.markdown("""<div class="tool-card">
         <div class="tool-icon">⚖️</div>
@@ -120,6 +127,7 @@ with c9:
         <div class="tool-desc">Fixed vs variable costs, contribution margin,
         break-even units and margin of safety. PDF export.</div>
     </div>""", unsafe_allow_html=True)
+    st.page_link("pages/9_Break_Even.py", label="Open →", use_container_width=False)
 with c10:
     st.markdown("""<div class="tool-card">
         <div class="tool-icon">🏢</div>
@@ -127,6 +135,7 @@ with c10:
         <div class="tool-desc">DCF, EBITDA multiple and revenue multiple — blended
         valuation range with industry benchmarks. PDF export.</div>
     </div>""", unsafe_allow_html=True)
+    st.page_link("pages/10_Valuation.py", label="Open →", use_container_width=False)
 
 st.markdown("---")
 st.markdown(

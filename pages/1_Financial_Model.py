@@ -50,6 +50,7 @@ st.markdown("""
 
 from mobile_css import inject_mobile_css
 inject_mobile_css()
+st.page_link("app.py", label="← All Tools")
 
 st.title("📈 5-Year Financial Model")
 st.markdown(

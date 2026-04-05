@@ -114,6 +114,85 @@ _MOBILE_CSS = """
 </style>
 """
 
+_DARK_THEME_CSS = """
+<style>
+/* ── Dark theme overrides ──────────────────────────────────────────────────── */
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+[data-testid="stMainBlockContainer"] {
+    background-color: #0e1117 !important;
+    color: #e2e8f0 !important;
+}
+[data-testid="stHeader"] {
+    background-color: #0e1117 !important;
+}
+[data-testid="stSidebar"] {
+    background-color: #161b27 !important;
+}
+/* Tool cards */
+.tool-card {
+    background: #1a1f2e !important;
+    border-color: #2d3748 !important;
+}
+.tool-title { color: #93c5fd !important; }
+.tool-desc  { color: #94a3b8 !important; }
+.section-label { color: #60a5fa !important; }
+/* Headings and body text */
+h1, h2, h3, h4, h5, h6,
+[data-testid="stMarkdown"] p,
+[data-testid="stMarkdown"] small {
+    color: #e2e8f0 !important;
+}
+hr { border-color: #2d3748 !important; }
+/* Page link (Open → buttons) */
+[data-testid="stPageLink"] a {
+    color: #60a5fa !important;
+}
+[data-testid="stPageLink"] a:hover {
+    color: #93c5fd !important;
+}
+</style>
+"""
+
+_LIGHT_THEME_CSS = """
+<style>
+/* ── Light theme restore ───────────────────────────────────────────────────── */
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+[data-testid="stMainBlockContainer"] {
+    background-color: #ffffff !important;
+    color: #1a1a1a !important;
+}
+[data-testid="stHeader"] {
+    background-color: #ffffff !important;
+}
+[data-testid="stSidebar"] {
+    background-color: #f8fafc !important;
+}
+.tool-card {
+    background: #ffffff !important;
+    border-color: #e8edf4 !important;
+}
+.tool-title { color: #003f88 !important; }
+.tool-desc  { color: #666666 !important; }
+.section-label { color: #0066cc !important; }
+[data-testid="stPageLink"] a {
+    color: #0066cc !important;
+}
+[data-testid="stPageLink"] a:hover {
+    color: #003f88 !important;
+}
+</style>
+"""
+
+
 def inject_mobile_css():
     """Inject mobile-responsive CSS. Call once per page, after st.set_page_config."""
     st.markdown(_MOBILE_CSS, unsafe_allow_html=True)
+
+
+def inject_theme_css(dark_mode: bool):
+    """Inject dark or light theme CSS overrides. Call after inject_mobile_css."""
+    st.markdown(_DARK_THEME_CSS if dark_mode else _LIGHT_THEME_CSS, unsafe_allow_html=True)

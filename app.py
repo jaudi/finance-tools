@@ -26,10 +26,22 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-from mobile_css import inject_mobile_css
+from mobile_css import inject_mobile_css, inject_theme_css
 inject_mobile_css()
 
-st.title("📊 Finance Tools")
+# ── Dark / Light mode toggle ──────────────────────────────────────────────────
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = False
+
+_title_col, _toggle_col = st.columns([10, 1])
+with _title_col:
+    st.title("📊 Finance Tools")
+with _toggle_col:
+    st.session_state.dark_mode = st.toggle(
+        "🌙", value=st.session_state.dark_mode, help="Toggle dark / light mode"
+    )
+
+inject_theme_css(st.session_state.dark_mode)
 st.markdown(
     "A free finance toolkit built by **FinancePlots**. "
     "No login required — open source, runs in your browser."
@@ -136,6 +148,18 @@ with c10:
         valuation range with industry benchmarks. PDF export.</div>
     </div>""", unsafe_allow_html=True)
     st.page_link("pages/10_Valuation.py", label="Open →", use_container_width=False)
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+st.markdown('<p class="section-label">Utilities</p>', unsafe_allow_html=True)
+c_util, _ = st.columns(2)
+with c_util:
+    st.markdown("""<div class="tool-card">
+        <div class="tool-icon">🎥</div>
+        <div class="tool-title">Screen Recorder</div>
+        <div class="tool-desc">Record your screen and download the video to share
+        with colleagues. Runs entirely in your browser — nothing is uploaded.</div>
+    </div>""", unsafe_allow_html=True)
+    st.page_link("pages/12_Screen_Recorder.py", label="Open →", use_container_width=False)
 
 st.markdown("---")
 st.markdown(

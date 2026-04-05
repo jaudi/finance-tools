@@ -26,22 +26,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-from mobile_css import inject_mobile_css, inject_theme_css
+from mobile_css import inject_mobile_css
 inject_mobile_css()
 
-# ── Dark / Light mode toggle ──────────────────────────────────────────────────
-if "dark_mode" not in st.session_state:
-    st.session_state.dark_mode = False
-
-_title_col, _toggle_col = st.columns([10, 1])
-with _title_col:
-    st.title("📊 Finance Tools")
-with _toggle_col:
-    st.session_state.dark_mode = st.toggle(
-        "🌙", value=st.session_state.dark_mode, help="Toggle dark / light mode"
-    )
-
-inject_theme_css(st.session_state.dark_mode)
+st.title("📊 Finance Tools")
 st.markdown(
     "A free finance toolkit built by **FinancePlots**. "
     "No login required — open source, runs in your browser."

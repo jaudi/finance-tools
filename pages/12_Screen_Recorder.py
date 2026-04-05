@@ -7,12 +7,8 @@ st.set_page_config(
     layout="wide",
 )
 
-from mobile_css import inject_mobile_css, inject_theme_css
+from mobile_css import inject_mobile_css
 inject_mobile_css()
-
-if "dark_mode" not in st.session_state:
-    st.session_state.dark_mode = False
-inject_theme_css(st.session_state.dark_mode)
 
 st.markdown("[← All Tools](/) &nbsp;", unsafe_allow_html=True)
 st.title("🎥 Screen Recorder")

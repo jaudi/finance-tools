@@ -137,6 +137,21 @@ with c10:
     </div>""", unsafe_allow_html=True)
     st.page_link("pages/10_Valuation.py", label="Open →", use_container_width=False)
 
+# ── Fundraising ───────────────────────────────────────────────────────────────
+st.markdown('<p class="section-label">Fundraising</p>', unsafe_allow_html=True)
+c_pitch, _ = st.columns(2)
+with c_pitch:
+    st.markdown("""<div class="tool-card">
+        <div class="tool-icon">🎯</div>
+        <div class="tool-title">Pitch Deck Builder</div>
+        <div class="tool-desc">9-slide investor pitch deck with cover, problem, solution,
+        market size, business model, traction, financials, team and the ask.
+        Download as editable PowerPoint (.pptx).</div>
+    </div>""", unsafe_allow_html=True)
+    st.page_link("pages/13_Pitch_Deck.py", label="Open →", use_container_width=False)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
 # ── Utilities ─────────────────────────────────────────────────────────────────
 st.markdown('<p class="section-label">Utilities</p>', unsafe_allow_html=True)
 c_util, _ = st.columns(2)
